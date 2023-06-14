@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useDispatch, useSelector } from "react-redux";
 import RootState from "@/redux/RootReducer";
@@ -21,15 +21,14 @@ import MyModal from "../globalComponents/MyModal";
 import AppLayout from "../globalComponents/AppLayout";
 import { AppDispatch } from "@/redux/RootStore";
 import { mocUserData } from "@/moc/user";
+import { getProfile } from "@/api/Profile";
+import { useGetUserQuery } from "@/redux/Api/Profile"
 
 const Profile = () => {
   const [state, setState] = useState({ activeTab: 0 });
-  const { uId, isMe, status, error, user } = useSelector(
-    (state: RootState) => state.profile
-  );
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const owner = useSelector((state: RootState) => state.global.uId);
+  const {data, error, isLoading} = useGetUserQuery(1);
 
   const handleChange = (
     value: number,
@@ -38,26 +37,23 @@ const Profile = () => {
     setState({ activeTab: value });
   };
 
+
+  const get = useCallback(async () => {
+
+    console.log();
+  }, [])
+
   useEffect(() => {
-    if (uId !== null) {
-      dispatch(fetchProfile({ userId: uId, ownerId: owner }));
-    }
-  }, [uId, dispatch, owner]);
+      console.log(data);
+      get();
+      return ;
+  }, [get, data])
 
   const close = () => {
     dispatch(resetProfile());
     router.back();
   };
 
-  if (status === "loading") {
-    return (
-      <AppLayout>
-        <MyModal hName="프로필" close={close}>
-          <H1>로딩중</H1>
-        </MyModal>
-      </AppLayout>
-    );
-  } else if (status === "succeeded") {
     return (
       <AppLayout>
         <MyModal hName="프로필" close={close}>
@@ -84,7 +80,7 @@ const Profile = () => {
                 게임로그
               </span>
             </Tab>
-            {isMe && (
+             (
               <Tab value={2}>
                 <span
                   style={{
@@ -96,7 +92,7 @@ const Profile = () => {
                   수정하기
                 </span>
               </Tab>
-            )}
+            )
           </Tabs>
           <WindowContent>
             <Row>
@@ -104,7 +100,7 @@ const Profile = () => {
                 shadow={false}
                 style={{ width: "100%", height: "44vh" }}
               >
-                {state.activeTab === 0 && <UserInfo user={user} />}
+                {state.activeTab === 0 && <UserInfo user={data} />}
                 {state.activeTab === 1 && <H1>게임로그</H1>}
                 {state.activeTab === 2 && <H1>프로필수정</H1>}
               </ScrollView>
@@ -113,16 +109,6 @@ const Profile = () => {
         </MyModal>
       </AppLayout>
     );
-  } else if (status === "failed") {
-    return (
-      <AppLayout>
-        <MyModal hName="프로필" close={close}>
-          <H1>Error</H1>
-          <p>{error}</p>
-        </MyModal>
-      </AppLayout>
-    );
-  }
 
   return (
     <AppLayout>

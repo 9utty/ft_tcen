@@ -8,7 +8,7 @@ const FriendSearch = () => {
         padding: "15px",
         fontFamily: "dunggeunmo-bold",
         fontSize: "20px",
-      }}>친구검색</div>);
+      }}>친구검색 굿굿</div>);
 }
 
 

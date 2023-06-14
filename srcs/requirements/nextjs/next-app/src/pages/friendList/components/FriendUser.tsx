@@ -1,4 +1,5 @@
 import Profile from "@/pages/Page/Profile";
+import { useGetFriendQuery } from "@/redux/Api/Friend";
 import RootState from "@/redux/RootReducer";
 import { AppDispatch } from "@/redux/RootStore";
 import LoadingSlice from "@/redux/Slice/Loading";
@@ -17,10 +18,9 @@ interface User {
 const FriendUser = ({ userNickName, stateOn, uId }: User) => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const owner = useSelector((state: RootState) => state.global.uId);
-
+  // const owner = useSelector((state: RootState) => state.global.uId);
   const openProfile = () => {
-    dispatch(fetchProfile({ userId: uId, ownerId: owner }));
+    // dispatch(fetchProfile({ userId: uId, ownerId: owner }));
     document.body.style.overflow = "hidden";
     router.push("/Page/Profile", "/Page/Profile", { shallow: false });
   };

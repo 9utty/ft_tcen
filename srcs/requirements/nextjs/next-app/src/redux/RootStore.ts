@@ -1,13 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { useDispatch } from "react-redux";
+import { FriendApi } from "./Api/Friend";
+import { ProfileApi } from "./Api/Profile";
 import { rootReducer } from "./RootReducer";
 
 const store = configureStore({
-  reducer: rootReducer,
+  reducer: {
+    ...rootReducer,
+    [ProfileApi.reducerPath]: ProfileApi.reducer,
+    [FriendApi.reducerPath]: FriendApi.reducer,
+  },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      thunk: true,
-    }),
+    getDefaultMiddleware().concat(ProfileApi.middleware, FriendApi.middleware),
 });
 
 export type AppDispatch = typeof store.dispatch;
