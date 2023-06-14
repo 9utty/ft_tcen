@@ -1,0 +1,80 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: "postgres"
+    image: postgres:15-alpine
+    restart: on-failure
+    networks:
+      - docker-network
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+
+  pgadmin:
+    container_name: "pgadmin"
+    image: dpage/pgadmin4:7.1
+    restart: on-failure
+    depends_on:
+      - postgres
+    networks:
+      - docker-network
+    ports:
+      - 5050:80
+    env_file:
+      - .env
+
+  nestjs:
+    container_name: "nestjs"
+    build:
+      context: ./requirements/nestjs
+      dockerfile: dockerfile
+    restart: on-failure
+    volumes:
+      - type: bind
+        source: ./requirements/nestjs/nest-app
+        target: /app
+    depends_on:
+      - postgres
+    networks:
+      - docker-network
+    env_file:
+      - .env
+    ports:
+      - 8080:8080
+
+  nextjs:
+    container_name: "nextjs"
+    build:
+      context: ./requirements/nextjs
+      dockerfile: dockerfile
+    restart: on-failure
+    volumes:
+      - type: bind
+        source: ./requirements/nextjs/next-app
+        target: /app
+    networks:
+      - docker-network
+    env_file:
+      - .env
+
+  nginx:
+    container_name: "nginx"
+    image: nginx:1.25.0-alpine
+    restart: on-failure
+    networks:
+      - docker-network
+    depends_on:
+      - nestjs
+      - nextjs
+    ports:
+      - 80:80
+    volumes:
+      - ./requirements/nginx/nginx.conf:/etc/nginx/nginx.conf
+    env_file:
+      - .env
+
+networks:
+  docker-network:
+    driver: bridge
