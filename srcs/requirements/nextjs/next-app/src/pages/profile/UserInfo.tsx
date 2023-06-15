@@ -5,10 +5,13 @@ import Div from "../PostComponents/Div";
 import { user, User } from "@/types/UserType";
 
 interface Props {
-  user: User | null;
+  user: User | undefined;
 }
 
 const UserInfo = ({ user }: Props) => {
+  if (user === undefined) {
+    return null;
+  }
   return (
     <div>
       <div

@@ -1,34 +1,21 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useDispatch, useSelector } from "react-redux";
-import RootState from "@/redux/RootReducer";
-import { fetchProfile, resetProfile } from "@/redux/Slice/Profile";
-import LoadingSlice from "@/redux/Slice/Loading";
+import { useDispatch } from "react-redux";
+import { resetProfile } from "@/redux/Slice/Profile";
 import H1 from "../PostComponents/H1";
-import {
-  Button,
-  ScrollView,
-  Tab,
-  TabBody,
-  Tabs,
-  Window,
-  WindowContent,
-  WindowHeader,
-} from "react95";
+import { ScrollView, Tab, Tabs, WindowContent } from "react95";
 import { Grid, Row } from "antd";
 import UserInfo from "../profile/UserInfo";
 import MyModal from "../globalComponents/MyModal";
 import AppLayout from "../globalComponents/AppLayout";
 import { AppDispatch } from "@/redux/RootStore";
-import { mocUserData } from "@/moc/user";
-import { getProfile } from "@/api/Profile";
-import { useGetUserQuery } from "@/redux/Api/Profile"
+import { useGetUserQuery } from "@/redux/Api/Profile";
 
 const Profile = () => {
   const [state, setState] = useState({ activeTab: 0 });
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const {data, error, isLoading} = useGetUserQuery(1);
+  const { data, error, isLoading } = useGetUserQuery(1);
 
   const handleChange = (
     value: number,
@@ -37,23 +24,12 @@ const Profile = () => {
     setState({ activeTab: value });
   };
 
-
-  const get = useCallback(async () => {
-
-    console.log();
-  }, [])
-
-  useEffect(() => {
-      console.log(data);
-      get();
-      return ;
-  }, [get, data])
-
   const close = () => {
     dispatch(resetProfile());
     router.back();
   };
 
+  if (data && !isLoading) {
     return (
       <AppLayout>
         <MyModal hName="프로필" close={close}>
@@ -80,18 +56,18 @@ const Profile = () => {
                 게임로그
               </span>
             </Tab>
-             (
-              <Tab value={2}>
-                <span
-                  style={{
-                    fontFamily: "dunggeunmo-bold",
-                    fontSize: "22px",
-                    width: "100px",
-                  }}
-                >
-                  수정하기
-                </span>
-              </Tab>
+            (
+            <Tab value={2}>
+              <span
+                style={{
+                  fontFamily: "dunggeunmo-bold",
+                  fontSize: "22px",
+                  width: "100px",
+                }}
+              >
+                수정하기
+              </span>
+            </Tab>
             )
           </Tabs>
           <WindowContent>
@@ -109,7 +85,7 @@ const Profile = () => {
         </MyModal>
       </AppLayout>
     );
-
+  }
   return (
     <AppLayout>
       <MyModal hName="프로필" close={close}>
