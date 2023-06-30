@@ -4,7 +4,7 @@
 
 - 실행 순서
   1. 도커가 있는지 부터 체크 (있다면 2번, 없다면 docker부터 설치 꼭 하세요!)
-  2. .env 파일 설정
+  2. /srcs/.env 파일 설정 (파일 생성해야함)
   ```
   ###### POSTGRESQL ######
   POSTGRES_PASSWORD=<Password>
@@ -23,7 +23,6 @@
   FT_MAIL=<USER 42EMAIL>
   FT_MAIL_SECRET= <SECRET>
   ```
-  3. 만든 .env파일을 
   3. 쉘에 make 실행
   4. 모든 컨테이너가 run 상태라면 http://localhost로 웹사이트에 접근할 수 있습니다.
 
