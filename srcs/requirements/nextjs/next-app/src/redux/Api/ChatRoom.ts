@@ -1,5 +1,5 @@
 // 2개
-import { resChatDto } from "@/types/resChatDto";
+import { resChatDto } from "@/types/ChatDto";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const ChatRoomApi = createApi({
@@ -8,10 +8,11 @@ export const ChatRoomApi = createApi({
     baseUrl: "/",
   }),
   endpoints: (bundler) => ({
-    getAll: bundler.query<resChatDto[], void>({
-      query() {
+    getAll: bundler.query<resChatDto[], number>({
+      query(uid: number) {
         return `http://localhost/api/chat/all`;
       },
+      keepUnusedDataFor: 10,
     }),
     getChatRoom: bundler.query<resChatDto, string>({
       query(roomName: string) {

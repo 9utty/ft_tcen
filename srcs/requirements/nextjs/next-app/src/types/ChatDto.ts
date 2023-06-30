@@ -4,8 +4,9 @@ export interface resChatDto {
   roomId: number;
   roomName: string;
   roomOwner: User;
+  roomAlba: User[];
   participants: User[];
-  roomType: number; // 0: public, 1: private, 2: protected
+  roomType: string; // 0: public, 1: private, 2: protected
 }
 
 export interface ChatRoom {
@@ -30,4 +31,21 @@ export interface reqChatDto {
   target: string;
   msg: msgCard;
   password: string;
+}
+
+export interface ReqSocketDto {
+  roomName: string;
+  roomType: number;
+  target: string;
+  msg: string;
+  password: string;
+}
+
+export interface ResMsgDto {
+  uid: number;
+  nickname: string;
+  profileURL: string;
+  date: string;
+  content: string;
+  isDm?: boolean;
 }

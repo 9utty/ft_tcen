@@ -1,34 +1,58 @@
-import Profile from "@/pages/Page/Profile";
-import { useGetFriendQuery } from "@/redux/Api/Friend";
-import RootState from "@/redux/RootReducer";
-import { AppDispatch } from "@/redux/RootStore";
-import LoadingSlice from "@/redux/Slice/Loading";
-import ProfileSlice, { fetchProfile } from "@/redux/Slice/Profile";
+import H3 from "@/pages/PostComponents/H3";
+import { useGetAuthQuery } from "@/redux/Api/Auth";
+import { useBlockFriendMutation, useGetFriendQuery } from "@/redux/Api/Friend";
+import { useGetUserQuery } from "@/redux/Api/Profile";
+import { RootState } from "@/redux/RootStore";
 import { useRouter } from "next/router";
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Button } from "react95";
 
 interface User {
-  userNickName: string;
-  stateOn: boolean;
   uId: number;
 }
 
-const FriendUser = ({ userNickName, stateOn, uId }: User) => {
+const State: string[] = ["green", "red", "yellow"];
+
+const FriendUser = ({ uId }: User) => {
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  // const owner = useSelector((state: RootState) => state.global.uId);
   const openProfile = () => {
-    // dispatch(fetchProfile({ userId: uId, ownerId: owner }));
     document.body.style.overflow = "hidden";
-    router.push("/Page/Profile", "/Page/Profile", { shallow: false });
+    router.push({ pathname: "/Page/Profile", query: { uId } }, undefined, {
+      shallow: false,
+    });
   };
+  const { uId: owner } = useSelector(
+    (state: RootState) => state.rootReducers.global
+  );
+  const [BlockUser] = useBlockFriendMutation();
+  const { data: friendData, refetch } = useGetFriendQuery(owner);
   // TODO: 차단할때 사용할 API콜함수
 
-  const blockFriend = () => {
-    console.log(`${userNickName} 차단`);
+  const {
+    data: userData,
+    isFetching: userFetching,
+    refetch: userRefetch,
+  } = useGetUserQuery(uId);
+
+  const blockFriend = async () => {
+    await BlockUser({ uid: owner, target: uId });
   };
+
+  useEffect(() => {
+    const refetchInterval = setInterval(() => {
+      if (userData) {
+        userRefetch();
+      }
+      if (friendData) {
+        refetch();
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(refetchInterval);
+    };
+  }, [refetch, userRefetch]);
 
   return (
     <div
@@ -52,11 +76,16 @@ const FriendUser = ({ userNickName, stateOn, uId }: User) => {
             alignItems: "center",
           }}
         >
-          {userNickName ? userNickName : "user1"}
+          {userData && userData.nickname}
           <div
             style={{
               marginRight: "8px",
-              backgroundColor: stateOn ? "green" : "red",
+              backgroundColor:
+                userData && userData.status === "online"
+                  ? "green"
+                  : userData && userData.status === "offline"
+                  ? "red"
+                  : "yellow",
               width: "10px",
               height: "10px",
               borderRadius: "50%",

@@ -1,21 +1,38 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { useDispatch } from "react-redux";
-import { resetProfile } from "@/redux/Slice/Profile";
+import { useSelector } from "react-redux";
 import H1 from "../PostComponents/H1";
 import { ScrollView, Tab, Tabs, WindowContent } from "react95";
 import { Grid, Row } from "antd";
 import UserInfo from "../profile/UserInfo";
 import MyModal from "../globalComponents/MyModal";
 import AppLayout from "../globalComponents/AppLayout";
-import { AppDispatch } from "@/redux/RootStore";
-import { useGetUserQuery } from "@/redux/Api/Profile";
+import { useGetProfileMutation, useGetUserQuery } from "@/redux/Api/Profile";
+import { RootState } from "@/redux/RootStore";
+import ProfileUpdate from "../profile/ProfileUpdate";
+import GameLog from "../profile/GameLog";
+import H3 from "../PostComponents/H3";
 
 const Profile = () => {
   const [state, setState] = useState({ activeTab: 0 });
+  const [isVisible, setIsVisible] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
-  const { data, error, isLoading } = useGetUserQuery(1);
+  const { uId: owner } = useSelector(
+    (state: RootState) => state.rootReducers.global
+  );
+  const { uId } = router.query;
+  const uid = Number(uId);
+
+  const {
+    data: userData,
+    error: userError,
+    isFetching: userFetching,
+    refetch: userRefetch,
+  } = useGetUserQuery(uid);
+
+  const [useGetProfile, { data: ProfileData, isSuccess: ProfileFetching }] =
+    useGetProfileMutation();
 
   const handleChange = (
     value: number,
@@ -24,12 +41,26 @@ const Profile = () => {
     setState({ activeTab: value });
   };
 
+  const onIsUpdate = (bool: boolean) => {
+    setIsUpdate(bool);
+  };
   const close = () => {
-    dispatch(resetProfile());
     router.back();
   };
 
-  if (data && !isLoading) {
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (userData) {
+        userRefetch();
+      }
+    }, 1500);
+    useGetProfile(uid);
+    return () => {
+      clearInterval(timer);
+    };
+  }, [isUpdate]);
+
+  if (userData) {
     return (
       <AppLayout>
         <MyModal hName="프로필" close={close}>
@@ -56,29 +87,31 @@ const Profile = () => {
                 게임로그
               </span>
             </Tab>
-            (
-            <Tab value={2}>
-              <span
-                style={{
-                  fontFamily: "dunggeunmo-bold",
-                  fontSize: "22px",
-                  width: "100px",
-                }}
-              >
-                수정하기
-              </span>
-            </Tab>
-            )
+            {owner === uid && (
+              <Tab value={2}>
+                <span
+                  style={{
+                    fontFamily: "dunggeunmo-bold",
+                    fontSize: "22px",
+                    width: "100px",
+                  }}
+                >
+                  수정하기
+                </span>
+              </Tab>
+            )}
           </Tabs>
           <WindowContent>
             <Row>
               <ScrollView
                 shadow={false}
-                style={{ width: "100%", height: "44vh" }}
+                style={{ width: "100%", height: "430px" }}
               >
-                {state.activeTab === 0 && <UserInfo user={data} />}
-                {state.activeTab === 1 && <H1>게임로그</H1>}
-                {state.activeTab === 2 && <H1>프로필수정</H1>}
+                {state.activeTab === 0 && <UserInfo user={userData} />}
+                {state.activeTab === 1 && <GameLog uid={uid} />}
+                {state.activeTab === 2 && (
+                  <ProfileUpdate uid={uid} func={onIsUpdate} />
+                )}
               </ScrollView>
             </Row>
           </WindowContent>

@@ -1,13 +1,14 @@
-import { GameLogDto } from "./log.dto"
+import { LogDto } from "./log.dto"
 
-export class getUserDto{
+export class ResUserDto{
 	uid: number
 	nickname: string // Defalut: Intra nickname
 	isOTP: boolean
-	isAvatar: boolean
-	avatarIndex: number // Defalut: 0
+	email: string
+	profileURL: string
 	totalWin: number // Defalut: 0
 	totalLose: number // Defalut: 0
 	level: number // Win의 10당 레벨 +1
-	gameLog: GameLogDto[]
+	status: string
+	gameLog: LogDto[]
 }

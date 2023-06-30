@@ -2,26 +2,30 @@ import { Content } from "@/types/ContentType";
 import React from "react";
 import { Image } from "antd";
 import Spacer from "@/pages/globalComponents/Spacer";
+import { ResMsgDto } from "@/types/ChatDto";
+import { Avatar } from "react95";
 
 interface Props {
-  Data: Content;
+  Data: ResMsgDto;
+  isMe: boolean;
+  isDm: boolean | undefined;
 }
 
 // isDm
 
-const MessageCard = ({ Data }: Props) => {
-  if (!Data) {
+const MessageCard = ({ Data, isMe, isDm }: Props) => {
+  if (!Data && isDm === undefined) {
     return null;
   }
   return (
     <div style={{ display: "flex", width: "100%" }}>
-      {Data.isTo === true ? (
+      {isMe === true ? (
         <>
           <div style={{ flex: "1" }}></div>
           <div
             style={{
               maxWidth: "50%",
-              backgroundColor: "#2271ae",
+              backgroundColor: isDm ? "#7d8e23" : "#2271ae",
               padding: "10px",
               borderRadius: "10px",
               marginBottom: "20px",
@@ -36,14 +40,9 @@ const MessageCard = ({ Data }: Props) => {
                 alignItems: "center",
               }}
             >
-              <Image
-                preview={false}
-                src={Data.profileImage}
-                width={"40px"}
-                style={{ borderRadius: "50%" }}
-              />
+              <Avatar src={Data.profileURL} size={40} />
               <div style={{ marginRight: "20px", fontSize: "25px" }}>
-                {Data.userNickName}
+                {Data.nickname}
               </div>
             </div>
             <div
@@ -53,8 +52,8 @@ const MessageCard = ({ Data }: Props) => {
                 alignItems: "end",
               }}
             >
-              <div style={{ marginTop: "10px" }}>{Data.Content}</div>
-              <div style={{ color: "#333" }}>{Data.Date}</div>
+              <div style={{ marginTop: "10px" }}>{Data.content}</div>
+              <div style={{ color: "#333" }}>{Data.date}</div>
             </div>
           </div>
         </>
@@ -63,7 +62,7 @@ const MessageCard = ({ Data }: Props) => {
           <div
             style={{
               maxWidth: "50%",
-              backgroundColor: "#999",
+              backgroundColor: isDm ? "#7d8e23" : "#999",
               padding: "10px",
               borderRadius: "10px",
               marginBottom: "20px",
@@ -72,19 +71,14 @@ const MessageCard = ({ Data }: Props) => {
             }}
           >
             <div style={{ display: "flex", alignItems: "center" }}>
-              <Image
-                preview={false}
-                src={Data.profileImage}
-                width={"40px"}
-                style={{ borderRadius: "50%" }}
-              />
+              <Avatar src={Data.profileURL} size={30} />
               <div style={{ marginLeft: "20px", fontSize: "25px" }}>
-                {Data.userNickName}
+                {Data.nickname}
               </div>
             </div>
             <div>
-              <div style={{ marginTop: "10px" }}>{Data.Content}</div>
-              <div style={{ color: "#444" }}>{Data.Date}</div>
+              <div style={{ marginTop: "10px" }}>{Data.content}</div>
+              <div style={{ color: "#444" }}>{Data.date}</div>
             </div>
           </div>
           <div style={{ flex: "1" }}></div>

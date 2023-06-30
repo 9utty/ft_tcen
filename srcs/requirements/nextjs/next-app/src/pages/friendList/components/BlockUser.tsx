@@ -1,15 +1,51 @@
-import React from "react";
+import H3 from "@/pages/PostComponents/H3";
+import {
+  useGetFriendQuery,
+  useUnBlockFriendMutation,
+} from "@/redux/Api/Friend";
+import { useGetUserQuery } from "@/redux/Api/Profile";
+import { RootState } from "@/redux/RootStore";
+import { data } from "autoprefixer";
+import React, { useEffect } from "react";
+import { useSelector } from "react-redux";
 import { Button } from "react95";
 
 interface User {
-  userNickName: string;
   uId: number;
 }
 
-const BlockUser = ({ userNickName, uId }: User) => {
-  const cancelBlock = () => {
-    console.log(`${userNickName} 차단 해제`);
+const BlockUser = ({ uId }: User) => {
+  const [BlockUsers, { data }] = useUnBlockFriendMutation();
+  const { uId: owner } = useSelector(
+    (state: RootState) => state.rootReducers.global
+  );
+  const {
+    data: userData,
+    isFetching: userIsFetching,
+    refetch: userRefetch,
+  } = useGetUserQuery(uId);
+  const { data: friendData, refetch } = useGetFriendQuery(owner);
+
+  const cancelBlock = async () => {
+    await BlockUsers({ uid: owner, target: uId });
+    console.log(data);
   };
+
+  useEffect(() => {
+    const refetchInterval = setInterval(() => {
+      if (userData) {
+        userRefetch();
+      }
+      if (friendData) {
+        refetch();
+      }
+    }, 2000);
+
+    return () => {
+      clearInterval(refetchInterval);
+    };
+  }, [refetch, userRefetch]);
+
   return (
     <div
       style={{
@@ -32,7 +68,7 @@ const BlockUser = ({ userNickName, uId }: User) => {
             alignItems: "center",
           }}
         >
-          {userNickName ? userNickName : "user1"}
+          {userData && userData.nickname}
         </div>
         <Button style={{ width: "10vw" }} onClick={cancelBlock}>
           해제

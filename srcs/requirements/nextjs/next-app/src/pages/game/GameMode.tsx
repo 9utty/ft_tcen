@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Modal from "../globalComponents/ModalWrapper";
 import { Button, Window, WindowContent, WindowHeader } from "react95";
 import { Grid } from "antd";
@@ -14,12 +14,12 @@ const GameMode = ({ close, gameMode }: Props) => {
   const screens = useBreakpoint();
 
   const selectNormal = () => {
-    gameMode(false);
+    gameMode(true);
     close();
   };
 
   const selectSpecial = () => {
-    gameMode(true);
+    gameMode(false);
     close();
   };
 

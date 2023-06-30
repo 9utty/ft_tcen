@@ -2,6 +2,11 @@ import React, { useEffect, useState } from "react";
 import Map from "./Map";
 import GameClose from "./Close";
 import GameScore from "./Score";
+import { GameRoom, GameRoomDto, GameStateDto, LogDto } from "@/types/GameDto";
+import { emitEvent, onEvent } from "@/utils/socket";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/RootStore";
+import { usePostLogMutation } from "@/redux/Api/Game";
 
 const ballRadius = 10; // 공의 반지름
 const paddleHeight = 80; // 패들의 높이
@@ -9,7 +14,28 @@ const paddleWidth = 10; // 패들의 너비
 const canvasWidth = 500; // 게임 영역의 너비
 const canvasHeight = 300; // 게임 영역의 높이
 
-const InGame: React.FC = () => {
+interface InGameProps {
+  isHost: boolean;
+  isNormal: boolean;
+  room: GameRoom;
+}
+
+interface keyPress {
+  ArrowUp: boolean;
+  ArrowDown: boolean;
+  w: boolean;
+  s: boolean;
+}
+
+interface gameKeyPressDto {
+  gameroom: GameRoom;
+  ArrowUp: boolean;
+  ArrowDown: boolean;
+  w: boolean;
+  s: boolean;
+}
+
+const InGame = ({ isHost, isNormal, room }: InGameProps) => {
   const initialDirection = Math.random() > 0.5 ? -1 : 1;
   const [ballPosition, setBallPosition] = useState({ x: 250, y: 150 });
   const [ballSpeed, setBallSpeed] = useState({ x: 4 * initialDirection, y: 4 });
@@ -17,8 +43,7 @@ const InGame: React.FC = () => {
     player1: { x: 20, y: canvasHeight / 2 - paddleHeight / 2 },
     player2: { x: 480, y: canvasHeight / 2 - paddleHeight / 2 },
   });
-  // Define a state to keep track of which keys are pressed
-  const [keysPressed, setKeysPressed] = useState({
+  const [keysPressed, setKeysPressed] = useState<keyPress>({
     ArrowUp: false,
     ArrowDown: false,
     w: false,
@@ -29,6 +54,9 @@ const InGame: React.FC = () => {
   const [gameTime, setGameTime] = useState(0); // Add gameTime state
   const [isEnd, setIsEnd] = useState(false);
   const [playerIndex, setPlayerIndex] = useState(0);
+  const [delay, setDelay] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+  const [postLogMutation] = usePostLogMutation();
 
   useEffect(() => {
     if (isEnd) {
@@ -36,11 +64,43 @@ const InGame: React.FC = () => {
     }
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      setKeysPressed((prev) => ({ ...prev, [event.key]: true }));
+      if (isHost && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+        setKeysPressed((prev) => ({ ...prev, [event.key]: true }));
+      } else if (!isHost && (event.key === "w" || event.key === "s")) {
+        setKeysPressed((prev) => ({ ...prev, [event.key]: true }));
+        emitEvent("guest2host", {
+          gameroom: {
+            host: room.host,
+            guest: room.guest,
+            game_start: true,
+            isNormal: isNormal,
+          },
+          ArrowUp: false,
+          ArrowDown: false,
+          w: event.key === "w",
+          s: event.key === "s",
+        });
+      }
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      setKeysPressed((prev) => ({ ...prev, [event.key]: false }));
+      if (isHost && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+        setKeysPressed((prev) => ({ ...prev, [event.key]: false }));
+      } else if (!isHost && (event.key === "w" || event.key === "s")) {
+        setKeysPressed((prev) => ({ ...prev, [event.key]: false }));
+        emitEvent("guest2host", {
+          gameroom: {
+            host: room.host,
+            guest: room.guest,
+            game_start: true,
+            isNormal: isNormal,
+          },
+          ArrowUp: false,
+          ArrowDown: false,
+          w: false,
+          s: false,
+        });
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -50,15 +110,28 @@ const InGame: React.FC = () => {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [isEnd]);
+  }, [
+    isEnd,
+    isHost,
+    isNormal,
+    keysPressed.ArrowDown,
+    keysPressed.ArrowUp,
+    keysPressed.s,
+    keysPressed.w,
+    room.guest,
+    room.host,
+  ]);
 
   useEffect(() => {
+    if (!isHost) {
+      return;
+    }
     const interval = setInterval(() => {
       if (isEnd) {
         return;
       }
       // Handle paddle movements
-      if (keysPressed.ArrowUp && paddlePositions.player2.y > 0) {
+      if (keysPressed.w && paddlePositions.player2.y > 0) {
         setPaddlePositions((prev) => ({
           ...prev,
           player2: { ...prev.player2, y: prev.player2.y - 5 },
@@ -66,7 +139,7 @@ const InGame: React.FC = () => {
       }
 
       if (
-        keysPressed.ArrowDown &&
+        keysPressed.s &&
         paddlePositions.player2.y < canvasHeight - paddleHeight
       ) {
         setPaddlePositions((prev) => ({
@@ -75,7 +148,7 @@ const InGame: React.FC = () => {
         }));
       }
 
-      if (keysPressed.w && paddlePositions.player1.y > 0) {
+      if (keysPressed.ArrowUp && paddlePositions.player1.y > 0) {
         setPaddlePositions((prev) => ({
           ...prev,
           player1: { ...prev.player1, y: prev.player1.y - 5 },
@@ -83,7 +156,7 @@ const InGame: React.FC = () => {
       }
 
       if (
-        keysPressed.s &&
+        keysPressed.ArrowDown &&
         paddlePositions.player1.y < canvasHeight - paddleHeight
       ) {
         setPaddlePositions((prev) => ({
@@ -100,7 +173,10 @@ const InGame: React.FC = () => {
 
       // Check if the ball hits the top or bottom wall
       if (newBallPosition.y <= 0 || newBallPosition.y >= canvasHeight) {
-        setBallSpeed((prev) => ({ x: prev.x, y: -prev.y }));
+        setBallSpeed((prev) => ({
+          x: prev.x,
+          y: -prev.y,
+        }));
       }
 
       // Check if the ball hits a paddle
@@ -113,7 +189,10 @@ const InGame: React.FC = () => {
           newBallPosition.y >= paddlePositions.player2.y &&
           newBallPosition.y <= paddlePositions.player2.y + paddleHeight)
       ) {
-        setBallSpeed((prev) => ({ x: -prev.x, y: prev.y }));
+        setBallSpeed((prev) => ({
+          x: -prev.x,
+          y: prev.y,
+        }));
       }
 
       // Update ball position
@@ -124,7 +203,6 @@ const InGame: React.FC = () => {
         newBallPosition.x - ballRadius < 0 ||
         newBallPosition.x + ballRadius > canvasWidth
       ) {
-        clearInterval(interval);
         // Update the score
         if (newBallPosition.x - ballRadius < 0) {
           setScore((prev) => ({ ...prev, player2: prev.player2 + 1 }));
@@ -141,7 +219,16 @@ const InGame: React.FC = () => {
         // TODO: Declare the winner
         // TODO: 여기서 보내고
       }
-    }, 16);
+      emitEvent("host2guest", {
+        gameroom: { host: room.host, guest: room.guest, game_start: true },
+        ballPosition: ballPosition,
+        paddlePositions: paddlePositions,
+        timeStamp: new Date().toISOString(),
+        isVisible: isVisible,
+        score: [score.player1, score.player2],
+        gameTime: gameTime,
+      });
+    }, 33);
 
     return () => {
       clearInterval(interval);
@@ -153,23 +240,64 @@ const InGame: React.FC = () => {
     paddlePositions,
     initialDirection,
     isEnd,
+    isHost,
+    delay,
+    room,
+    score.player1,
+    score.player2,
+    gameTime,
+    isNormal,
+    isVisible,
   ]);
 
   useEffect(() => {
     const timer = setInterval(() => {
+      if (!isHost) {
+        return;
+      }
       setGameTime((prev) => {
         if (prev >= 100 || isEnd) {
-          clearInterval(timer); // End interval when gameTime reaches 100
-          return prev; // Return previous state, gameTime won't be incremented
+          clearInterval(timer);
+          return prev;
         }
-        return prev + 1; // Increment gameTime
+        return prev + 1;
       });
     }, 1000);
+
+    console.log("isHost");
+    console.log(isHost);
+    if (isHost) {
+      onEvent("guest2host", (data: gameKeyPressDto) => {
+        setKeysPressed({
+          ArrowDown: data.ArrowDown,
+          ArrowUp: data.ArrowUp,
+          s: data.s,
+          w: data.w,
+        });
+      });
+    } else if (!isHost) {
+      onEvent("host2guest", (data: GameStateDto) => {
+        setPaddlePositions(() => ({
+          player1: {
+            x: data.paddlePositions.player1.x,
+            y: data.paddlePositions.player1.y,
+          },
+          player2: {
+            x: data.paddlePositions.player2.x,
+            y: data.paddlePositions.player2.y,
+          },
+        }));
+        setBallPosition({ x: data.ballPosition.x, y: data.ballPosition.y });
+        setDelay(new Date(data.timeStemp).getTime() - new Date().getTime());
+        setScore({ player1: data.score[0], player2: data.score[1] });
+        setGameTime(data.gameTime);
+      });
+    }
 
     return () => {
       clearInterval(timer);
     };
-  }, [isEnd]);
+  }, [isEnd, isHost]);
 
   useEffect(() => {
     if (score.player1 === 5 || score.player2 === 5 || gameTime > 100) {
@@ -184,10 +312,56 @@ const InGame: React.FC = () => {
           setPlayerIndex(1);
         }
       }
-      setIsEnd(true);
-      console.log("Game over");
+      if (isHost === false) {
+        return;
+      }
+      if (isEnd === false) {
+        emitEvent("host2guest", {
+          gameroom: { host: room.host, guest: room.guest, game_start: true },
+          ballPosition: ballPosition,
+          paddlePositions: paddlePositions,
+          timeStamp: new Date().toISOString(),
+          isVisible: isVisible,
+          score: [score.player1, score.player2],
+          gameTime: gameTime,
+        });
+        emitEvent("finish", {
+          gameroom: { host: room.host, guest: room.guest, game_start: true },
+          ballPosition: ballPosition,
+          paddlePositions: paddlePositions,
+          timeStamp: new Date().toISOString(),
+          isVisible: isVisible,
+          score: [score.player1, score.player2],
+          gameTime: gameTime,
+        });
+        postLogMutation({
+          fromId: room.host,
+          toId: room.guest,
+          fromScore: score.player1,
+          toScore: score.player2,
+          score: [score.player1, score.player2],
+        });
+        setIsEnd(true);
+      }
     }
-  }, [score, gameTime]);
+  }, [
+    score,
+    gameTime,
+    room.host,
+    room.guest,
+    ballPosition,
+    paddlePositions,
+    isVisible,
+    postLogMutation,
+    isHost,
+    isEnd,
+  ]);
+
+  useEffect(() => {
+    onEvent("finish", () => {
+      setIsEnd(true);
+    });
+  }, []);
 
   return (
     <div>
@@ -197,16 +371,20 @@ const InGame: React.FC = () => {
           paddingLeft: "75px",
         }}
       >
-        <Map
-          ballPosition={ballPosition}
-          paddlePositions={paddlePositions}
-          ballRadius={ballRadius}
-          paddleHeight={paddleHeight}
-          paddleWidth={paddleWidth}
-          canvasWidth={canvasWidth}
-          canvasHeight={canvasHeight}
-          isVisible={false} // TODO: 나중에 객체에서 받은 값으로 변경해야함
-        />
+        {!isEnd && (
+          <Map
+            ballPosition={ballPosition}
+            paddlePositions={paddlePositions}
+            ballRadius={ballRadius}
+            paddleHeight={paddleHeight}
+            paddleWidth={paddleWidth}
+            canvasWidth={canvasWidth}
+            canvasHeight={canvasHeight}
+            room={room}
+            score={[score.player1, score.player2]}
+            gameTime={gameTime}
+          />
+        )}
       </div>
       <GameScore
         player1={score.player1}

@@ -6,31 +6,23 @@ import SearchRoom from "./SearchRoom";
 import { useDispatch, useSelector } from "react-redux";
 import { ChatSlice } from "@/redux/Slice/Chat";
 import RootState from "@/redux/RootReducer";
+import { useGetChatRoomQuery } from "@/redux/Api/ChatRoom";
 
 const SearchPage = () => {
   const [input, setInput] = useState("");
   const [filteredChat, setFilteredChat] = useState<chat>();
   const [timer, setTimer] = useState<NodeJS.Timeout | null>(null);
-  const dispatch = useDispatch();
-  const room = useSelector((state: RootState) => state.chat.room);
+
+  const {
+    data: chatRoomData,
+    error: chatRoomError,
+    isFetching: chatRoomIsFetching,
+    refetch: chatRoomRefetch,
+  } = useGetChatRoomQuery(input, { skip: input === "" });
 
   const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = event.target.value;
     setInput(value);
-    if (timer) clearTimeout(timer);
-
-    if (value !== "") {
-      const newTimer = setTimeout(() => {
-        const result = chatMocData.find((chat) => chat.roomName === value);
-        setFilteredChat(result);
-        if (result) {
-          dispatch(ChatSlice.actions.addRoom(result));
-        } else {
-          dispatch(ChatSlice.actions.deleteRoom());
-        }
-      }, 500);
-      setTimer(newTimer);
-    }
   };
 
   return (
@@ -63,7 +55,9 @@ const SearchPage = () => {
           />
         </div>
       </div>
-      <SearchRoom room={room} />
+      {!chatRoomIsFetching && !chatRoomError && (
+        <SearchRoom room={chatRoomData} />
+      )}
     </div>
   );
 };

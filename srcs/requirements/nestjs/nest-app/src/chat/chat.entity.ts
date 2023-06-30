@@ -8,6 +8,6 @@ export class Chat{
 	participants: User[]
 	banned: User[]
 	muted: User[]
-	roomType: number
-	password: string
+	roomType: string
+	hashedPassword: string
 }

@@ -6,6 +6,8 @@ import { WindowContent, Tabs, Tab, ScrollView } from "react95";
 import { Row } from "antd";
 import SearchPage from "../chat/components/SearchPage";
 import RoomList from "../chat/components/RoomList";
+import RoomCreate from "../chat/components/RoomCreate";
+import { offEvent } from "@/utils/socket";
 
 const ChatList = () => {
   const [state, setState] = useState({ activeTab: 0 });
@@ -13,6 +15,7 @@ const ChatList = () => {
 
   const close = () => {
     router.back();
+    offEvent("join");
   };
   const handleChange = (
     value: number,
@@ -48,6 +51,17 @@ const ChatList = () => {
               채널찾기
             </span>
           </Tab>
+          <Tab value={2}>
+            <span
+              style={{
+                fontFamily: "dunggeunmo-bold",
+                fontSize: "22px",
+                width: "100px",
+              }}
+            >
+              채널생성
+            </span>
+          </Tab>
         </Tabs>
         <WindowContent>
           {activeTab === 0 && <RoomList />}
@@ -61,6 +75,7 @@ const ChatList = () => {
               </ScrollView>
             </Row>
           )}
+          {activeTab === 2 && <RoomCreate />}
         </WindowContent>
       </MyModal>
     </AppLayout>

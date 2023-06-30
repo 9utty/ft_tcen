@@ -16,11 +16,11 @@ export class User{
 	@Column({default:false})
 	isOTP: boolean;
 
-	@Column({default:false})
-	isAvatar: boolean;
-
-	@Column({default:0})
-	avatarIndex: number;
+	@Column({default:""})
+	email: string;
+	
+	@Column({default:"api/image/default.jpeg"})
+	profileURL: string;
 
 	@Column({default:0})
 	totalWin: number;
@@ -30,4 +30,7 @@ export class User{
 
 	@Column({default:1})
 	level: number;
+
+	@Column({default:'offline'})
+	status: string;
 }
